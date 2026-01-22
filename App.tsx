@@ -1,8 +1,8 @@
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, ZoomControl, useMapEvents, Circle } from 'react-leaflet';
 import L from 'leaflet';
-import { Plus, Navigation, AlertTriangle, X, Map as MapIcon, List, Clock, LocateFixed, Info } from 'lucide-react';
+import { Plus, Navigation, AlertTriangle, X, Map as MapIcon, List, Clock, LocateFixed, Info, BarChart3 } from 'lucide-react';
 import { HelpRequest, HelpType, UserLocation, HelpStatus } from './types';
 import { STATUS_COLORS, VIETNAMESE_LABELS, HELP_TYPES } from './constants';
 import { subscribeToRequests, submitHelpRequest, updateRequestStatus, updateHelpRequest } from './services/firebase';
@@ -13,6 +13,7 @@ import RequestList from './components/RequestList';
 import RequestDetail from './components/RequestDetail';
 import FilterBar from './components/FilterBar';
 import AboutModal from './components/AboutModal';
+import StatsModal from './components/StatsModal';
 import { formatRelativeTime, formatFullDateTime } from './utils/time';
 
 const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
@@ -81,6 +82,7 @@ const App: React.FC = () => {
   const [activeFilter, setActiveFilter] = useState<HelpType | 'all' | 'mine'>('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAboutOpen, setIsAboutOpen] = useState(false);
+  const [isStatsOpen, setIsStatsOpen] = useState(false);
   const [editingRequest, setEditingRequest] = useState<HelpRequest | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<{ message: string; type: string } | null>(null);
@@ -125,6 +127,12 @@ const App: React.FC = () => {
     }
     return () => unsubscribe();
   }, [updateLocation]);
+
+  const completionPercentage = useMemo(() => {
+    if (requests.length === 0) return 0;
+    const completed = requests.filter(r => r.status === 'completed').length;
+    return Math.round((completed / requests.length) * 100);
+  }, [requests]);
 
   const handleLocateUser = () => {
     setIsFollowingUser(true);
@@ -254,7 +262,15 @@ const App: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen bg-slate-50 overflow-hidden font-sans">
-      {viewMode === 'map' && <FilterBar activeFilter={activeFilter} onFilterChange={setActiveFilter} />}
+      {/* FilterBar integrated with Stats */}
+      {viewMode === 'map' && (
+        <FilterBar 
+          activeFilter={activeFilter} 
+          onFilterChange={setActiveFilter} 
+          completionPercentage={completionPercentage}
+          onStatsClick={() => setIsStatsOpen(true)}
+        />
+      )}
       
       {error && !activeRoute && (
         <div className="fixed top-24 left-4 right-4 z-[550] pointer-events-none">
@@ -265,11 +281,11 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Info Button Top Right */}
-      <div className="fixed top-safe right-4 z-[500] pt-4 pointer-events-none">
+      {/* Floating Info Button - Right */}
+      <div className="fixed top-20 right-4 z-[500] pt-4 pointer-events-none">
         <button 
           onClick={() => setIsAboutOpen(true)}
-          className="w-12 h-12 bg-white/85 backdrop-blur-xl border border-white/60 rounded-full flex items-center justify-center text-slate-700 shadow-xl pointer-events-auto active:scale-90 transition-all"
+          className="w-12 h-12 bg-white/90 backdrop-blur-xl border border-white/60 rounded-full flex items-center justify-center text-slate-700 shadow-xl pointer-events-auto active:scale-90 transition-all"
         >
           <Info className="w-6 h-6" />
         </button>
@@ -438,6 +454,7 @@ const App: React.FC = () => {
       )}
 
       <AboutModal isOpen={isAboutOpen} onClose={() => setIsAboutOpen(false)} />
+      <StatsModal isOpen={isStatsOpen} onClose={() => setIsStatsOpen(false)} requests={requests} />
 
       <style>{`
         .custom-popup .leaflet-popup-content-wrapper { border-radius: 12px; padding: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); background: white; }
