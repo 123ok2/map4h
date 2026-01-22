@@ -1,6 +1,7 @@
 
 import React, { useState, useRef } from 'react';
 import { X, CheckCircle, Camera, Upload } from 'lucide-react';
+import { compressImage } from '../utils/image';
 
 interface ProofFormProps {
   isOpen: boolean;
@@ -13,16 +14,26 @@ const ProofForm: React.FC<ProofFormProps> = ({ isOpen, onClose, onSubmit, isSubm
   const [helperName, setHelperName] = useState('');
   const [helperContact, setHelperContact] = useState('');
   const [proofImage, setProofImage] = useState<string>('');
+  const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   if (!isOpen) return null;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setIsCompressing(true);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setProofImage(reader.result as string);
+      reader.onloadend = async () => {
+        try {
+          const compressed = await compressImage(reader.result as string);
+          setProofImage(compressed);
+        } catch (error) {
+          console.error("Lỗi nén ảnh:", error);
+          alert("Không thể xử lý ảnh này. Vui lòng thử ảnh khác.");
+        } finally {
+          setIsCompressing(false);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -30,6 +41,7 @@ const ProofForm: React.FC<ProofFormProps> = ({ isOpen, onClose, onSubmit, isSubm
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (isCompressing) return;
     onSubmit({ helperName, helperContact, proofImage });
   };
 
@@ -73,15 +85,15 @@ const ProofForm: React.FC<ProofFormProps> = ({ isOpen, onClose, onSubmit, isSubm
           <div>
             <label className="block text-sm font-bold text-gray-700 mb-1">Hình ảnh minh chứng</label>
             <div 
-              onClick={() => fileInputRef.current?.click()}
-              className="mt-1 flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all cursor-pointer overflow-hidden"
+              onClick={() => !isCompressing && fileInputRef.current?.click()}
+              className={`mt-1 flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-xl hover:border-green-500 hover:bg-green-50 transition-all cursor-pointer overflow-hidden relative ${isCompressing ? 'opacity-50' : ''}`}
             >
               {proofImage ? (
                 <img src={proofImage} alt="Proof" className="w-full h-full object-cover" />
               ) : (
                 <div className="flex flex-col items-center text-gray-400">
                   <Camera className="w-10 h-10 mb-2" />
-                  <span className="text-sm">Chạm để chụp hoặc chọn ảnh</span>
+                  <span className="text-sm">{isCompressing ? 'Đang nén ảnh...' : 'Chạm để chụp hoặc chọn ảnh'}</span>
                 </div>
               )}
             </div>
@@ -96,10 +108,10 @@ const ProofForm: React.FC<ProofFormProps> = ({ isOpen, onClose, onSubmit, isSubm
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isSubmitting || isCompressing}
             className="w-full py-3 bg-green-600 text-white rounded-xl font-bold hover:bg-green-700 transition-colors shadow-lg disabled:opacity-50"
           >
-            {isSubmitting ? 'Đang lưu...' : 'Xác nhận & Hoàn thành'}
+            {isSubmitting ? 'Đang lưu...' : isCompressing ? 'Đang xử lý ảnh...' : 'Xác nhận & Hoàn thành'}
           </button>
         </form>
       </div>

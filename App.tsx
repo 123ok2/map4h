@@ -208,15 +208,17 @@ const App: React.FC = () => {
     } catch (err) { alert("Lỗi hệ thống."); } finally { setIsSubmitting(false); }
   };
 
-  const filteredRequests = requests.filter(r => {
-    let passes = activeFilter === 'mine' ? r.createdBy === userId : (activeFilter === 'all' || r.type === activeFilter);
-    if (!passes) return false;
-    if (r.createdBy === userId) return true;
-    if (userLocation) {
-      return calculateDistance(userLocation.lat, userLocation.lng, r.location.lat, r.location.lng) <= 5;
-    }
-    return true; 
-  });
+  const filteredRequests = useMemo(() => {
+    return requests.filter(r => {
+      let passes = activeFilter === 'mine' ? r.createdBy === userId : (activeFilter === 'all' || r.type === activeFilter);
+      if (!passes) return false;
+      if (r.createdBy === userId) return true;
+      if (userLocation) {
+        return calculateDistance(userLocation.lat, userLocation.lng, r.location.lat, r.location.lng) <= 5;
+      }
+      return true; 
+    });
+  }, [requests, activeFilter, userId, userLocation]);
 
   const handleFocusOnMap = (req: HelpRequest) => {
     setIsFollowingUser(false);
@@ -249,14 +251,26 @@ const App: React.FC = () => {
     }
   };
 
-  const createMarkerIcon = (status: HelpStatus, isMine: boolean) => {
+  const createMarkerIcon = (status: HelpStatus, isMine: boolean, index: number) => {
     const color = STATUS_COLORS[status];
+    const isWaiting = status === 'waiting';
+    
     return L.divIcon({
-      html: `<div class="relative scale-110">
-        <div style="background-color: ${color}" class="w-8 h-8 rounded-full border-[3px] border-white shadow-xl transform transition-transform"></div>
-        ${isMine ? `<div class="absolute -top-1 -right-1 w-3.5 h-3.5 bg-blue-600 rounded-full border-2 border-white"></div>` : ''}
-      </div>`,
-      className: '', iconSize: [32, 32], iconAnchor: [16, 16], popupAnchor: [0, -16],
+      html: `
+        <div class="relative flex items-center justify-center">
+          ${isWaiting ? `<div class="absolute w-12 h-12 rounded-full animate-ping opacity-25" style="background-color: ${color}"></div>` : ''}
+          <div 
+            style="background-color: ${color}" 
+            class="w-9 h-9 rounded-full border-[3px] border-white shadow-[0_8px_16px_rgba(0,0,0,0.2)] flex items-center justify-center text-white font-black text-xs transition-all transform hover:scale-125 z-10"
+          >
+            ${index + 1}
+          </div>
+          ${isMine ? `<div class="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-600 rounded-full border-2 border-white z-20 shadow-md"></div>` : ''}
+        </div>`,
+      className: '', 
+      iconSize: [40, 40], 
+      iconAnchor: [20, 20], 
+      popupAnchor: [0, -20]
     });
   };
 
@@ -337,11 +351,11 @@ const App: React.FC = () => {
             </>
           )}
 
-          {filteredRequests.map((req) => (
+          {filteredRequests.map((req, index) => (
             <Marker 
               key={req.id} 
               position={[req.location.lat, req.location.lng]} 
-              icon={createMarkerIcon(req.status, req.createdBy === userId)}
+              icon={createMarkerIcon(req.status, req.createdBy === userId, index)}
               eventHandlers={{
                 click: () => {
                   setDetailRequest(req);
@@ -351,7 +365,7 @@ const App: React.FC = () => {
             >
               <Popup className="custom-popup">
                 <div className="text-center py-1">
-                  <p className="text-[10px] font-black uppercase text-slate-400">Chạm để xem chi tiết</p>
+                  <p className="text-[10px] font-black uppercase text-slate-400">#${index + 1} - Chạm để xem chi tiết</p>
                   <p className="text-sm font-black text-slate-900">{HELP_TYPES.find(t => t.type === req.type)?.label}</p>
                 </div>
               </Popup>

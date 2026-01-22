@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { X, Send, Camera, ChevronLeft, User } from 'lucide-react';
 import { HELP_TYPES } from '../constants';
 import { HelpType, HelpRequest } from '../types';
+import { compressImage } from '../utils/image';
 
 interface HelpFormProps {
   isOpen: boolean;
@@ -19,6 +20,7 @@ const HelpForm: React.FC<HelpFormProps> = ({ isOpen, onClose, onSubmit, isSubmit
   const [description, setDescription] = useState('');
   const [contact, setContact] = useState('');
   const [imageUrl, setImageUrl] = useState('');
+  const [isCompressing, setIsCompressing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -36,11 +38,22 @@ const HelpForm: React.FC<HelpFormProps> = ({ isOpen, onClose, onSubmit, isSubmit
 
   if (!isOpen) return null;
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
+      setIsCompressing(true);
       const reader = new FileReader();
-      reader.onloadend = () => setImageUrl(reader.result as string);
+      reader.onloadend = async () => {
+        try {
+          const compressed = await compressImage(reader.result as string);
+          setImageUrl(compressed);
+        } catch (error) {
+          console.error("Lỗi nén ảnh:", error);
+          alert("Không thể xử lý ảnh này. Vui lòng thử ảnh khác.");
+        } finally {
+          setIsCompressing(false);
+        }
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -113,11 +126,14 @@ const HelpForm: React.FC<HelpFormProps> = ({ isOpen, onClose, onSubmit, isSubmit
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-1">
                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Hình ảnh hiện trường</label>
-                   <div onClick={() => fileInputRef.current?.click()} className="aspect-square bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer active:bg-slate-100 overflow-hidden shadow-inner">
+                   <div onClick={() => !isCompressing && fileInputRef.current?.click()} className={`aspect-square bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer active:bg-slate-100 overflow-hidden shadow-inner relative ${isCompressing ? 'opacity-50' : ''}`}>
                       {imageUrl ? (
                         <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
                       ) : (
-                        <Camera className="w-8 h-8 text-slate-300" />
+                        <>
+                          <Camera className="w-8 h-8 text-slate-300" />
+                          {isCompressing && <div className="absolute inset-0 flex items-center justify-center bg-white/60 text-[8px] font-black text-slate-900 uppercase">Đang xử lý...</div>}
+                        </>
                       )}
                    </div>
                    <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={handleFileChange} />
@@ -128,8 +144,8 @@ const HelpForm: React.FC<HelpFormProps> = ({ isOpen, onClose, onSubmit, isSubmit
                 </div>
               </div>
               
-              <button disabled={isSubmitting} className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl active:scale-95 transition-all disabled:opacity-50 mt-4">
-                {isSubmitting ? 'Đang xử lý...' : <><Send className="w-5 h-5" /> {editData ? 'Cập nhật' : 'Gửi tin cứu trợ'}</>}
+              <button disabled={isSubmitting || isCompressing} className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl active:scale-95 transition-all disabled:opacity-50 mt-4">
+                {isSubmitting ? 'Đang gửi...' : isCompressing ? 'Đang nén ảnh...' : <><Send className="w-5 h-5" /> {editData ? 'Cập nhật' : 'Gửi tin cứu trợ'}</>}
               </button>
             </form>
           )}

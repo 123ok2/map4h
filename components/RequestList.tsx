@@ -154,7 +154,7 @@ const RequestList: React.FC<RequestListProps> = ({
             )}
           </div>
         ) : (
-          filteredAndSearchedRequests.map((req) => {
+          filteredAndSearchedRequests.map((req, index) => {
             const typeInfo = HELP_TYPES.find(t => t.type === req.type);
             const distance = userLocation 
               ? calculateDistance(userLocation.lat, userLocation.lng, req.location.lat, req.location.lng)
@@ -167,9 +167,14 @@ const RequestList: React.FC<RequestListProps> = ({
             return (
               <div 
                 key={req.id} 
-                className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.08)] overflow-hidden transition-all active:scale-[0.98]"
+                className="bg-white rounded-[2.5rem] border border-slate-100 shadow-[0_15px_40px_-15px_rgba(0,0,0,0.08)] overflow-hidden transition-all active:scale-[0.98] relative"
               >
-                <div className="p-5">
+                {/* Badge Số thứ tự */}
+                <div className="absolute top-4 left-4 z-10 bg-slate-900 text-white w-7 h-7 rounded-full flex items-center justify-center font-black text-xs shadow-lg border-2 border-white">
+                  {index + 1}
+                </div>
+
+                <div className="p-5 pl-14">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center gap-3">
                       <div className={`${typeInfo?.color} w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-lg`}>
