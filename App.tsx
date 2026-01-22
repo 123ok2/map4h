@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { MapContainer, TileLayer, Marker, Popup, useMap, Polyline, ZoomControl, useMapEvents, Circle } from 'react-leaflet';
 import L from 'leaflet';
-import { Plus, Navigation, AlertTriangle, X, Map as MapIcon, List, Clock, LocateFixed, Info, BarChart3 } from 'lucide-react';
+import { Plus, Navigation, AlertTriangle, X, Map as MapIcon, List, Clock, LocateFixed, Info, BarChart3, Fingerprint } from 'lucide-react';
 import { HelpRequest, HelpType, UserLocation, HelpStatus } from './types';
 import { STATUS_COLORS, VIETNAMESE_LABELS, HELP_TYPES } from './constants';
 import { subscribeToRequests, submitHelpRequest, updateRequestStatus, updateHelpRequest } from './services/firebase';
@@ -261,22 +261,22 @@ const App: React.FC = () => {
           ${isWaiting ? `<div class="absolute w-12 h-12 rounded-full animate-ping opacity-25" style="background-color: ${color}"></div>` : ''}
           <div 
             style="background-color: ${color}" 
-            class="w-9 h-9 rounded-full border-[3px] border-white shadow-[0_8px_16px_rgba(0,0,0,0.2)] flex items-center justify-center text-white font-black text-xs transition-all transform hover:scale-125 z-10"
+            class="w-10 h-10 rounded-full border-[3.5px] border-white shadow-[0_10px_25px_rgba(0,0,0,0.25)] flex items-center justify-center text-white font-black text-[13px] transition-all transform hover:scale-125 z-10"
           >
             ${index + 1}
           </div>
-          ${isMine ? `<div class="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-600 rounded-full border-2 border-white z-20 shadow-md"></div>` : ''}
+          ${isMine ? `<div class="absolute -bottom-1 -right-1 w-4.5 h-4.5 bg-blue-600 rounded-full border-2 border-white z-20 shadow-md"></div>` : ''}
         </div>`,
       className: '', 
-      iconSize: [40, 40], 
-      iconAnchor: [20, 20], 
-      popupAnchor: [0, -20]
+      iconSize: [44, 44], 
+      iconAnchor: [22, 22], 
+      popupAnchor: [0, -22]
     });
   };
 
   return (
     <div className="relative w-full h-screen bg-slate-50 overflow-hidden font-sans">
-      {/* FilterBar integrated with Stats */}
+      {/* HUD: Top Filter Bar */}
       {viewMode === 'map' && (
         <FilterBar 
           activeFilter={activeFilter} 
@@ -286,25 +286,27 @@ const App: React.FC = () => {
         />
       )}
       
+      {/* HUD: Alerts */}
       {error && !activeRoute && (
         <div className="fixed top-24 left-4 right-4 z-[550] pointer-events-none">
-          <div className="bg-amber-50/90 backdrop-blur-md border border-amber-200 p-3 rounded-2xl shadow-xl flex items-center gap-3 animate-in slide-in-from-top duration-300 max-w-sm mx-auto">
+          <div className="bg-amber-50/95 backdrop-blur-md border border-amber-200 p-3.5 rounded-2xl shadow-xl flex items-center gap-3 animate-in slide-in-from-top duration-300 max-w-sm mx-auto">
             <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0" />
             <span className="text-[11px] font-black text-amber-800 uppercase tracking-tight">{error.message}</span>
           </div>
         </div>
       )}
 
-      {/* Floating Info Button - Right */}
+      {/* Floating Info Button */}
       <div className="fixed top-20 right-4 z-[500] pt-4 pointer-events-none">
         <button 
           onClick={() => setIsAboutOpen(true)}
-          className="w-12 h-12 bg-white/90 backdrop-blur-xl border border-white/60 rounded-full flex items-center justify-center text-slate-700 shadow-xl pointer-events-auto active:scale-90 transition-all"
+          className="w-12 h-12 bg-white/95 backdrop-blur-xl border border-white/60 rounded-full flex items-center justify-center text-slate-700 shadow-xl pointer-events-auto active:scale-90 transition-all hover:bg-slate-50"
         >
           <Info className="w-6 h-6" />
         </button>
       </div>
 
+      {/* Map Layer */}
       <div className={`w-full h-full transition-opacity duration-500 ${viewMode === 'list' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <MapContainer center={[10.762622, 106.660172]} zoom={15} zoomControl={false} className="w-full h-full">
           <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
@@ -365,8 +367,12 @@ const App: React.FC = () => {
             >
               <Popup className="custom-popup">
                 <div className="text-center py-1">
-                  <p className="text-[10px] font-black uppercase text-slate-400">#${index + 1} - Chạm để xem chi tiết</p>
-                  <p className="text-sm font-black text-slate-900">{HELP_TYPES.find(t => t.type === req.type)?.label}</p>
+                  <div className="flex items-center justify-center gap-1.5 mb-1 opacity-60">
+                    <Fingerprint className="w-2.5 h-2.5" />
+                    <span className="text-[8px] font-mono font-bold tracking-tighter">ID: {req.id.substring(0, 8)}...</span>
+                  </div>
+                  <p className="text-[9px] font-black uppercase text-slate-400">Tin số ${index + 1} - Chạm để xem</p>
+                  <p className="text-sm font-black text-slate-900 leading-none mt-1">{HELP_TYPES.find(t => t.type === req.type)?.label}</p>
                 </div>
               </Popup>
             </Marker>
@@ -374,6 +380,7 @@ const App: React.FC = () => {
         </MapContainer>
       </div>
 
+      {/* List Layer */}
       {viewMode === 'list' && (
         <div className="fixed inset-0 z-[400] bg-slate-50 overflow-y-auto animate-in fade-in slide-in-from-right duration-300">
            <RequestList 
@@ -388,9 +395,9 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Bottom Interface */}
+      {/* FIXED BOTTOM HUD: Navigation & Actions */}
       <div className="fixed bottom-0 left-0 right-0 z-[1000] pb-safe px-6 pointer-events-none">
-        <div className="max-w-md mx-auto w-full flex flex-col items-center gap-4 pb-8">
+        <div className="max-w-md mx-auto w-full flex flex-col items-center gap-5 pb-8">
           {activeRoute ? (
              <div className="w-full bg-white/95 backdrop-blur-2xl rounded-[2.5rem] shadow-2xl border border-white p-6 flex items-center justify-between pointer-events-auto animate-in slide-in-from-bottom-10">
                 <div className="flex items-center gap-4">
@@ -410,7 +417,8 @@ const App: React.FC = () => {
                 </button>
              </div>
           ) : (
-            <div className="flex flex-col items-end w-full gap-4">
+            <div className="flex flex-col items-end w-full gap-5">
+              {/* GPS Button */}
               <button 
                 onClick={handleLocateUser}
                 className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl border transition-all pointer-events-auto active:scale-90 ${
@@ -422,24 +430,26 @@ const App: React.FC = () => {
                 <LocateFixed className="w-6 h-6" />
               </button>
 
-              <div className="flex items-center gap-3 pointer-events-auto">
+              <div className="flex items-center gap-4 pointer-events-auto">
+                {/* View Switcher */}
                 <button 
                   onClick={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
-                  className="w-16 h-16 bg-white border border-slate-200 text-slate-800 rounded-full flex items-center justify-center shadow-xl hover:bg-slate-50 active:scale-90 transition-all"
+                  className="w-16 h-16 bg-white border border-slate-200 text-slate-800 rounded-full flex items-center justify-center shadow-xl hover:bg-slate-50 active:scale-90 transition-all ring-4 ring-slate-100"
                 >
                   {viewMode === 'map' ? <List className="w-7 h-7" /> : <MapIcon className="w-7 h-7" />}
                 </button>
 
+                {/* Primary SOS Button */}
                 <button 
                   onClick={() => { setSelectedLocation(userLocation); setEditingRequest(null); setIsFormOpen(true); }} 
-                  className="group flex items-center gap-4 bg-red-600 text-white pl-5 pr-8 py-5 rounded-[2.5rem] shadow-[0_24px_48px_rgba(220,38,38,0.4)] hover:bg-red-700 active:scale-95 transition-all ring-8 ring-red-600/10"
+                  className="group flex items-center gap-4 bg-red-600 text-white pl-6 pr-9 py-5 rounded-[2.5rem] shadow-[0_24px_50px_rgba(220,38,38,0.45)] hover:bg-red-700 active:scale-95 transition-all ring-8 ring-red-600/10"
                 >
                   <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center shadow-inner">
                     <Plus className="w-7 h-7 stroke-[3px]" />
                   </div>
                   <div className="text-left">
-                    <p className="text-[10px] font-black uppercase opacity-80 tracking-widest leading-none mb-1">Cần hỗ trợ?</p>
-                    <span className="text-base font-black uppercase tracking-tight leading-none">Gửi yêu cứu trợ</span>
+                    <p className="text-[10px] font-black uppercase opacity-80 tracking-widest leading-none mb-1">Tin mới?</p>
+                    <span className="text-base font-black uppercase tracking-tight leading-none">Gửi cứu trợ</span>
                   </div>
                 </button>
               </div>
@@ -448,7 +458,14 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      <HelpForm isOpen={isFormOpen} onClose={() => { setIsFormOpen(false); setEditingRequest(null); setSelectedLocation(null); }} onSubmit={handleSubmitRequest} isSubmitting={isSubmitting} editData={editingRequest} />
+      {/* Modals & Overlays */}
+      <HelpForm 
+        isOpen={isFormOpen} 
+        onClose={() => { setIsFormOpen(false); setEditingRequest(null); setSelectedLocation(null); }} 
+        onSubmit={handleSubmitRequest} 
+        isSubmitting={isSubmitting} 
+        editData={editingRequest} 
+      />
       
       <ProofForm 
         isOpen={!!proofRequest} 
@@ -471,8 +488,9 @@ const App: React.FC = () => {
       <StatsModal isOpen={isStatsOpen} onClose={() => setIsStatsOpen(false)} requests={requests} />
 
       <style>{`
-        .custom-popup .leaflet-popup-content-wrapper { border-radius: 12px; padding: 4px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); background: white; }
+        .custom-popup .leaflet-popup-content-wrapper { border-radius: 16px; padding: 6px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.05); background: white; }
         .custom-popup .leaflet-popup-tip { background: white; }
+        .leaflet-container { font-family: inherit; }
       `}</style>
     </div>
   );
