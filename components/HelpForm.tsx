@@ -61,7 +61,7 @@ const HelpForm: React.FC<HelpFormProps> = ({ isOpen, onClose, onSubmit, isSubmit
   return (
     <div className="fixed inset-0 z-[2000] flex items-end justify-center bg-slate-900/60 backdrop-blur-sm transition-opacity duration-300">
       <div className="bg-white w-full max-w-lg rounded-t-[3rem] shadow-[0_-20px_50px_rgba(0,0,0,0.2)] overflow-hidden animate-in slide-in-from-bottom duration-500 pb-safe">
-        {/* Header Handle for Mobile Feeling */}
+        {/* Thanh cầm tay cho cảm giác di động */}
         <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mt-4 mb-2"></div>
 
         <div className="relative px-6 py-4 flex items-center justify-between">
@@ -72,7 +72,7 @@ const HelpForm: React.FC<HelpFormProps> = ({ isOpen, onClose, onSubmit, isSubmit
           )}
           <div className="flex-1 text-center">
             <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight">
-              {editData ? 'Sửa thông tin' : 'Gửi yêu cứu trợ'}
+              {editData ? 'Sửa thông tin' : 'Gửi yêu cầu cứu trợ'}
             </h2>
           </div>
           <button onClick={onClose} className="p-2 bg-red-50 text-red-600 rounded-full active:scale-90 transition-all">
@@ -113,22 +113,22 @@ const HelpForm: React.FC<HelpFormProps> = ({ isOpen, onClose, onSubmit, isSubmit
                     value={requesterName} 
                     onChange={(e) => setRequesterName(e.target.value)} 
                     className="w-full pl-14 pr-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-[2rem] focus:bg-white focus:border-blue-500 outline-none transition-all text-base font-bold" 
-                    placeholder="Họ và tên người cần hỗ trợ" 
+                    placeholder="Họ tên người/nhóm cần cứu trợ" 
                   />
                 </div>
               </div>
 
               <div>
                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Mô tả chi tiết</label>
-                <textarea required rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-[2rem] focus:bg-white focus:border-blue-500 outline-none transition-all text-base font-medium" placeholder="Bạn cần hỗ trợ cụ thể điều gì?" />
+                <textarea required rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full px-6 py-5 bg-slate-50 border-2 border-slate-100 rounded-[2rem] focus:bg-white focus:border-blue-500 outline-none transition-all text-base font-medium" placeholder="Mô tả tình hình hoặc nhu cầu cần hỗ trợ?" />
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="col-span-1">
-                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Hình ảnh hiện trường</label>
+                   <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-2 ml-1">Ảnh hiện trường</label>
                    <div onClick={() => !isCompressing && fileInputRef.current?.click()} className={`aspect-square bg-slate-50 rounded-[2rem] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center cursor-pointer active:bg-slate-100 overflow-hidden shadow-inner relative ${isCompressing ? 'opacity-50' : ''}`}>
                       {imageUrl ? (
-                        <img src={imageUrl} alt="Preview" className="w-full h-full object-cover" />
+                        <img src={imageUrl} alt="Ảnh xem trước" className="w-full h-full object-cover" />
                       ) : (
                         <>
                           <Camera className="w-8 h-8 text-slate-300" />
@@ -145,7 +145,7 @@ const HelpForm: React.FC<HelpFormProps> = ({ isOpen, onClose, onSubmit, isSubmit
               </div>
               
               <button disabled={isSubmitting || isCompressing} className="w-full py-6 bg-slate-900 text-white rounded-[2rem] font-black uppercase tracking-widest flex items-center justify-center gap-3 shadow-2xl active:scale-95 transition-all disabled:opacity-50 mt-4">
-                {isSubmitting ? 'Đang gửi...' : isCompressing ? 'Đang nén ảnh...' : <><Send className="w-5 h-5" /> {editData ? 'Cập nhật' : 'Gửi tin cứu trợ'}</>}
+                {isSubmitting ? 'Đang gửi dữ liệu...' : isCompressing ? 'Đang nén ảnh...' : <><Send className="w-5 h-5" /> {editData ? 'Cập nhật tin' : 'Gửi cứu trợ khẩn'}</>}
               </button>
             </form>
           )}

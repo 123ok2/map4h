@@ -38,20 +38,19 @@ const RequestList: React.FC<RequestListProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
 
-  const handleOpenGoogleMaps = (req: HelpRequest) => {
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${req.location.lat},${req.location.lng}`;
-    window.open(url, '_blank');
-  };
-
   const filteredAndSearchedRequests = useMemo(() => {
     return requests.filter(req => {
       const matchesSearch = 
         (req.requesterName?.toLowerCase().includes(searchQuery.toLowerCase()) || false) ||
         req.description.toLowerCase().includes(searchQuery.toLowerCase());
       
-      return matchesSearch;
+      const matchesFilter = activeFilter === 'mine' 
+        ? req.createdBy === currentUserId 
+        : (activeFilter === 'all' || req.type === activeFilter);
+
+      return matchesSearch && matchesFilter;
     });
-  }, [requests, searchQuery]);
+  }, [requests, searchQuery, activeFilter, currentUserId]);
 
   return (
     <div className="flex flex-col h-full bg-slate-50">
@@ -67,7 +66,7 @@ const RequestList: React.FC<RequestListProps> = ({
         </div>
 
         <div className="relative group">
-          <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors">
+          <div className="absolute left-6 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors z-10">
             <Search className="w-5 h-5" />
           </div>
           <input 
@@ -75,16 +74,62 @@ const RequestList: React.FC<RequestListProps> = ({
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             placeholder="Tìm theo tên, nội dung, khu vực..."
-            className="w-full bg-white border-2 border-slate-100 rounded-[1.5rem] pl-13 pr-12 py-5 text-base font-bold text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:ring-8 focus:ring-blue-500/5 outline-none transition-all shadow-sm"
+            className="w-full bg-white border-2 border-slate-100 rounded-[1.5rem] pl-16 pr-12 py-5 text-base font-bold text-slate-800 placeholder:text-slate-400 focus:border-blue-500 focus:ring-8 focus:ring-blue-500/5 outline-none transition-all shadow-sm"
           />
           {searchQuery && (
             <button 
               onClick={() => setSearchQuery('')}
-              className="absolute right-5 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors"
+              className="absolute right-5 top-1/2 -translate-y-1/2 p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-full transition-colors z-10"
             >
               <X className="w-4 h-4" />
             </button>
           )}
+        </div>
+
+        {/* Thanh lọc danh mục nhanh */}
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1 px-1">
+          <button
+            onClick={() => onFilterChange('all')}
+            className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all ${
+              activeFilter === 'all' 
+                ? 'bg-slate-900 text-white shadow-md shadow-slate-200' 
+                : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <Layers className="w-3.5 h-3.5" />
+            <span>Tất cả</span>
+          </button>
+
+          <button
+            onClick={() => onFilterChange('mine')}
+            className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all ${
+              activeFilter === 'mine' 
+                ? 'bg-indigo-600 text-white shadow-md shadow-indigo-100' 
+                : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <User className="w-3.5 h-3.5" />
+            <span>Của tôi</span>
+          </button>
+
+          <div className="w-px h-6 bg-slate-200 shrink-0 mx-1"></div>
+
+          {HELP_TYPES.map((item) => (
+            <button
+              key={item.type}
+              onClick={() => onFilterChange(item.type)}
+              className={`flex-shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full text-[10px] font-black uppercase tracking-wider transition-all ${
+                activeFilter === item.type 
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-100' 
+                  : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <span className={activeFilter === item.type ? 'scale-110' : 'scale-90 opacity-60'}>
+                {item.icon}
+              </span>
+              <span>{item.label}</span>
+            </button>
+          ))}
         </div>
       </div>
 
@@ -94,9 +139,9 @@ const RequestList: React.FC<RequestListProps> = ({
             <div className="w-28 h-28 bg-white border border-slate-100 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-2xl shadow-slate-200/50">
               <Search className="w-12 h-12 text-slate-200" />
             </div>
-            <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Không tìm thấy dữ liệu</h3>
+            <h3 className="text-xl font-black text-slate-900 mb-2 uppercase tracking-tight">Không tìm thấy tin báo</h3>
             <p className="text-slate-500 text-sm font-medium px-6 leading-relaxed">
-              Thử tìm kiếm với từ khóa khác hoặc kiểm tra lại bộ lọc.
+              Thử tìm kiếm với từ khóa khác hoặc điều chỉnh bộ lọc của bạn.
             </p>
           </div>
         ) : (
@@ -115,17 +160,17 @@ const RequestList: React.FC<RequestListProps> = ({
                 onClick={() => onShowOnMap(req)}
                 className="bg-white rounded-[2.2rem] border border-slate-100 shadow-[0_20px_45px_-12px_rgba(0,0,0,0.06)] overflow-hidden transition-all active:scale-[0.97] hover:shadow-xl relative"
               >
-                {/* Index & ID Indicator */}
-                <div className="absolute top-5 left-5 z-10 flex flex-col items-center gap-1">
-                  <div className="bg-slate-900 text-white w-8 h-8 rounded-full flex items-center justify-center font-black text-[11px] shadow-lg border-2 border-white">
+                {/* Index & ID Indicator - Sửa lại vị trí và khoảng cách */}
+                <div className="absolute top-6 left-5 z-10 flex flex-col items-center gap-2">
+                  <div className="bg-slate-900 text-white w-9 h-9 rounded-full flex items-center justify-center font-black text-[12px] shadow-lg border-2 border-white">
                     {index + 1}
                   </div>
-                  <div className="bg-white/90 backdrop-blur-sm border border-slate-200 px-1.5 py-0.5 rounded text-[7px] font-mono font-bold tracking-tighter shadow-sm">
+                  <div className="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-[8px] font-mono font-bold tracking-tighter shadow-sm text-slate-500">
                     {req.id.substring(0, 6)}
                   </div>
                 </div>
 
-                <div className="p-5 pl-15">
+                <div className="p-6 pl-20"> {/* Tăng pl-15 lên pl-20 để tránh chồng lấp số thứ tự */}
                   <div className="flex items-start justify-between mb-5">
                     <div className="flex items-center gap-4">
                       <div className={`${typeInfo?.color} w-13 h-13 rounded-2xl flex items-center justify-center text-white shadow-xl shadow-opacity-20`}>
@@ -170,7 +215,7 @@ const RequestList: React.FC<RequestListProps> = ({
                       </div>
                       {req.imageUrl && (
                         <div className="w-24 h-24 rounded-[1.5rem] overflow-hidden bg-slate-100 shrink-0 border-2 border-white shadow-md">
-                          <img src={req.imageUrl} alt="Help" className="w-full h-full object-cover" />
+                          <img src={req.imageUrl} alt="Cứu trợ" className="w-full h-full object-cover" />
                         </div>
                       )}
                     </div>

@@ -108,12 +108,12 @@ const App: React.FC = () => {
     getUserIdentity().then(id => setUserId(id));
     const unsubscribe = subscribeToRequests(
       (data) => setRequests(data),
-      (err) => setError({ message: "Lỗi kết nối máy chủ.", type: 'general' })
+      (err) => setError({ message: "Lỗi kết nối máy chủ. Vui lòng kiểm tra mạng.", type: 'general' })
     );
 
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(updateLocation, 
-        (err) => setError({ message: "Vui lòng bật GPS chính xác cao để sử dụng.", type: 'gps' }),
+        (err) => setError({ message: "Vui lòng bật định vị GPS để xác định vị trí của bạn.", type: 'gps' }),
         geoOptions
       );
       
@@ -123,7 +123,7 @@ const App: React.FC = () => {
         navigator.geolocation.clearWatch(watchId);
       };
     } else {
-      setError({ message: "Trình duyệt không hỗ trợ định vị.", type: 'gps' });
+      setError({ message: "Trình duyệt không hỗ trợ định vị địa lý.", type: 'gps' });
     }
     return () => unsubscribe();
   }, [updateLocation]);
@@ -143,7 +143,7 @@ const App: React.FC = () => {
           setFocusTarget({ lat: pos.coords.latitude, lng: pos.coords.longitude });
           setTimeout(() => setFocusTarget(null), 2000);
         },
-        (err) => alert("Không thể lấy vị trí hiện tại. Hãy kiểm tra cài đặt GPS."),
+        (err) => alert("Không thể lấy vị trí. Hãy kiểm tra cài đặt GPS của thiết bị."),
         geoOptions
       );
     }
@@ -152,12 +152,12 @@ const App: React.FC = () => {
   const handleMapClick = (lat: number, lng: number) => {
     if (activeRoute) return; 
     if (!userLocation) {
-      alert("Vui lòng đợi hệ thống xác định vị trí của bạn.");
+      alert("Hệ thống đang xác định vị trí của bạn, vui lòng đợi trong giây lát.");
       return;
     }
     const distance = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
     if (distance > 5) {
-      alert(`Vị trí này quá xa (${distance.toFixed(1)}km). Bạn chỉ có thể báo cứu hộ trong bán kính 5km.`);
+      alert(`Vị trí đã chọn quá xa (${distance.toFixed(1)}km). Bạn chỉ có thể báo cứu hộ trong phạm vi 5km quanh bạn.`);
       return;
     }
     setSelectedLocation({ lat, lng });
@@ -189,7 +189,10 @@ const App: React.FC = () => {
         setViewMode('map');
         setDetailRequest(null);
       }
-    } catch (err) { console.error(err); }
+    } catch (err) { 
+      console.error(err);
+      alert("Không thể tìm thấy lộ trình di chuyển.");
+    }
   };
 
   const handleSubmitRequest = async (type: HelpType, requesterName: string, description: string, contact: string, imageUrl: string) => {
@@ -205,7 +208,11 @@ const App: React.FC = () => {
       }
       setIsFormOpen(false);
       setSelectedLocation(null);
-    } catch (err) { alert("Lỗi hệ thống."); } finally { setIsSubmitting(false); }
+    } catch (err) { 
+      alert("Gửi yêu cầu thất bại. Vui lòng thử lại."); 
+    } finally { 
+      setIsSubmitting(false); 
+    }
   };
 
   const filteredRequests = useMemo(() => {
@@ -244,8 +251,9 @@ const App: React.FC = () => {
         assistedBy: userId
       });
       setProofRequest(null);
+      alert("Cảm ơn bạn đã hỗ trợ cộng đồng!");
     } catch (err) {
-      alert("Lỗi khi cập nhật trạng thái.");
+      alert("Lỗi khi cập nhật trạng thái cứu trợ.");
     } finally {
       setIsSubmitting(false);
     }
@@ -258,7 +266,7 @@ const App: React.FC = () => {
     return L.divIcon({
       html: `
         <div class="relative flex items-center justify-center">
-          ${isWaiting ? `<div class="absolute w-12 h-12 rounded-full animate-ping opacity-25" style="background-color: ${color}"></div>` : ''}
+          ${isWaiting ? `<div class="absolute w-12 h-12 rounded-full animate-ping opacity-30" style="background-color: ${color}"></div>` : ''}
           <div 
             style="background-color: ${color}" 
             class="w-10 h-10 rounded-full border-[3.5px] border-white shadow-[0_10px_25px_rgba(0,0,0,0.25)] flex items-center justify-center text-white font-black text-[13px] transition-all transform hover:scale-125 z-10"
@@ -276,7 +284,7 @@ const App: React.FC = () => {
 
   return (
     <div className="relative w-full h-screen bg-slate-50 overflow-hidden font-sans">
-      {/* HUD: Top Filter Bar */}
+      {/* HUD: Thanh Lọc Phía Trên */}
       {viewMode === 'map' && (
         <FilterBar 
           activeFilter={activeFilter} 
@@ -286,7 +294,7 @@ const App: React.FC = () => {
         />
       )}
       
-      {/* HUD: Alerts */}
+      {/* HUD: Thông Báo Lỗi */}
       {error && !activeRoute && (
         <div className="fixed top-24 left-4 right-4 z-[550] pointer-events-none">
           <div className="bg-amber-50/95 backdrop-blur-md border border-amber-200 p-3.5 rounded-2xl shadow-xl flex items-center gap-3 animate-in slide-in-from-top duration-300 max-w-sm mx-auto">
@@ -296,7 +304,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* Floating Info Button */}
+      {/* Nút Thông Tin */}
       <div className="fixed top-20 right-4 z-[500] pt-4 pointer-events-none">
         <button 
           onClick={() => setIsAboutOpen(true)}
@@ -306,7 +314,7 @@ const App: React.FC = () => {
         </button>
       </div>
 
-      {/* Map Layer */}
+      {/* Lớp Bản Đồ */}
       <div className={`w-full h-full transition-opacity duration-500 ${viewMode === 'list' ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}>
         <MapContainer center={[10.762622, 106.660172]} zoom={15} zoomControl={false} className="w-full h-full">
           <TileLayer url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png" />
@@ -380,7 +388,7 @@ const App: React.FC = () => {
         </MapContainer>
       </div>
 
-      {/* List Layer */}
+      {/* Lớp Danh Sách */}
       {viewMode === 'list' && (
         <div className="fixed inset-0 z-[400] bg-slate-50 overflow-y-auto animate-in fade-in slide-in-from-right duration-300">
            <RequestList 
@@ -395,7 +403,7 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {/* FIXED BOTTOM HUD: Navigation & Actions */}
+      {/* THANH ĐIỀU HƯỚNG DƯỚI CỐ ĐỊNH */}
       <div className="fixed bottom-0 left-0 right-0 z-[1000] pb-safe px-6 pointer-events-none">
         <div className="max-w-md mx-auto w-full flex flex-col items-center gap-5 pb-8">
           {activeRoute ? (
@@ -405,7 +413,7 @@ const App: React.FC = () => {
                     <Navigation className="w-7 h-7" />
                   </div>
                   <div>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Đang dẫn đường</p>
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-0.5">Đang chỉ đường</p>
                     <div className="flex items-center gap-2">
                       <span className="text-2xl font-black text-slate-900">{(activeRoute.distance / 1000).toFixed(1)}km</span>
                       <span className="text-blue-600 font-bold text-lg">• ~{Math.ceil(activeRoute.duration / 60)}p</span>
@@ -418,7 +426,6 @@ const App: React.FC = () => {
              </div>
           ) : (
             <div className="flex flex-col items-end w-full gap-5">
-              {/* GPS Button */}
               <button 
                 onClick={handleLocateUser}
                 className={`w-14 h-14 rounded-2xl flex items-center justify-center shadow-2xl border transition-all pointer-events-auto active:scale-90 ${
@@ -431,7 +438,6 @@ const App: React.FC = () => {
               </button>
 
               <div className="flex items-center gap-4 pointer-events-auto">
-                {/* View Switcher */}
                 <button 
                   onClick={() => setViewMode(viewMode === 'map' ? 'list' : 'map')}
                   className="w-16 h-16 bg-white border border-slate-200 text-slate-800 rounded-full flex items-center justify-center shadow-xl hover:bg-slate-50 active:scale-90 transition-all ring-4 ring-slate-100"
@@ -439,7 +445,6 @@ const App: React.FC = () => {
                   {viewMode === 'map' ? <List className="w-7 h-7" /> : <MapIcon className="w-7 h-7" />}
                 </button>
 
-                {/* Primary SOS Button */}
                 <button 
                   onClick={() => { setSelectedLocation(userLocation); setEditingRequest(null); setIsFormOpen(true); }} 
                   className="group flex items-center gap-4 bg-red-600 text-white pl-6 pr-9 py-5 rounded-[2.5rem] shadow-[0_24px_50px_rgba(220,38,38,0.45)] hover:bg-red-700 active:scale-95 transition-all ring-8 ring-red-600/10"
@@ -448,7 +453,7 @@ const App: React.FC = () => {
                     <Plus className="w-7 h-7 stroke-[3px]" />
                   </div>
                   <div className="text-left">
-                    <p className="text-[10px] font-black uppercase opacity-80 tracking-widest leading-none mb-1">Tin mới?</p>
+                    <p className="text-[10px] font-black uppercase opacity-80 tracking-widest leading-none mb-1">Cần hỗ trợ?</p>
                     <span className="text-base font-black uppercase tracking-tight leading-none">Gửi cứu trợ</span>
                   </div>
                 </button>
@@ -458,7 +463,6 @@ const App: React.FC = () => {
         </div>
       </div>
 
-      {/* Modals & Overlays */}
       <HelpForm 
         isOpen={isFormOpen} 
         onClose={() => { setIsFormOpen(false); setEditingRequest(null); setSelectedLocation(null); }} 
