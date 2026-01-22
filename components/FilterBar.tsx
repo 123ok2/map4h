@@ -6,7 +6,7 @@ import { HelpType } from '../types';
 
 interface FilterBarProps {
   activeFilter: HelpType | 'all' | 'mine';
-  onFilterChange: (filter: HelpType | 'all' | 'mine');
+  onFilterChange: (filter: HelpType | 'all' | 'mine') => void;
   completionPercentage: number;
   onStatsClick: () => void;
 }
