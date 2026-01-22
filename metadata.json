@@ -1,0 +1,8 @@
+{
+  "name": "Map For Help (MAP4H)",
+  "description": "A community-driven platform connecting people in need with volunteers through a real-time interactive map.",
+  "requestFramePermissions": [
+    "geolocation",
+    "camera"
+  ]
+}
